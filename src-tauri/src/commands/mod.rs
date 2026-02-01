@@ -131,6 +131,22 @@ pub fn check_apple_intelligence_available() -> bool {
     }
 }
 
+/// Check if Claude Code CLI is available on this system.
+/// Called by the frontend when the user selects Claude CLI provider.
+#[specta::specta]
+#[tauri::command]
+pub fn check_claude_cli_available() -> bool {
+    crate::claude_cli::is_claude_cli_available()
+}
+
+/// Get available Claude CLI models.
+/// Returns list of (id, label) tuples.
+#[specta::specta]
+#[tauri::command]
+pub fn get_claude_cli_models() -> Vec<(String, String)> {
+    crate::claude_cli::get_claude_cli_models()
+}
+
 /// Try to initialize Enigo (keyboard/mouse simulation).
 /// On macOS, this will return an error if accessibility permissions are not granted.
 #[specta::specta]

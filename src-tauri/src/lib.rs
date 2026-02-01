@@ -2,6 +2,7 @@ mod actions;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
 mod audio_feedback;
+mod claude_cli;
 pub mod audio_toolkit;
 mod clipboard;
 mod commands;
@@ -286,6 +287,8 @@ pub fn run() {
         commands::open_log_dir,
         commands::open_app_data_dir,
         commands::check_apple_intelligence_available,
+        commands::check_claude_cli_available,
+        commands::get_claude_cli_models,
         commands::initialize_enigo,
         commands::initialize_shortcuts,
         commands::models::get_available_models,

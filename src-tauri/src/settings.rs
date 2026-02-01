@@ -8,6 +8,7 @@ use tauri_plugin_store::StoreExt;
 
 pub const APPLE_INTELLIGENCE_PROVIDER_ID: &str = "apple_intelligence";
 pub const APPLE_INTELLIGENCE_DEFAULT_MODEL_ID: &str = "Apple Intelligence";
+pub const CLAUDE_CLI_PROVIDER_ID: &str = "claude_cli";
 
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "lowercase")]
@@ -448,6 +449,15 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
         });
     }
 
+    // Claude Code CLI provider (no API key needed, uses local CLI)
+    providers.push(PostProcessProvider {
+        id: CLAUDE_CLI_PROVIDER_ID.to_string(),
+        label: "Claude Code CLI".to_string(),
+        base_url: "claude-cli://local".to_string(),
+        allow_base_url_edit: false,
+        models_endpoint: None,
+    });
+
     // Custom provider always comes last
     providers.push(PostProcessProvider {
         id: "custom".to_string(),
@@ -471,6 +481,9 @@ fn default_post_process_api_keys() -> HashMap<String, String> {
 fn default_model_for_provider(provider_id: &str) -> String {
     if provider_id == APPLE_INTELLIGENCE_PROVIDER_ID {
         return APPLE_INTELLIGENCE_DEFAULT_MODEL_ID.to_string();
+    }
+    if provider_id == CLAUDE_CLI_PROVIDER_ID {
+        return crate::claude_cli::DEFAULT_CLAUDE_MODEL.to_string();
     }
     String::new()
 }

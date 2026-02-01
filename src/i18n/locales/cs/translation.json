@@ -234,6 +234,10 @@
           "requirements": "Vyžaduje Mac s Apple Silicon a macOS Tahoe (26.0) nebo novější. Apple Intelligence musí být povoleno v Nastavení systému.",
           "unavailable": "Apple Intelligence není na tomto zařízení k dispozici. Vyžaduje Mac s Apple Silicon a macOS Tahoe (26.0) nebo novější a povolené Apple Intelligence v Nastavení systému."
         },
+        "claudeCli": {
+          "info": "Claude Code CLI používá lokální příkaz 'claude'. Vyžaduje Claude Code CLI s předplatným Pro/Max. API klíč není potřeba.",
+          "unavailable": "Claude Code CLI není nainstalováno nebo není dostupné. Nainstalujte ho z https://claude.ai/claude-code a ujistěte se, že příkaz 'claude' je ve vašem PATH."
+        },
         "baseUrl": {
           "title": "Základní URL",
           "description": "Základní URL API pro vybraného poskytovatele. Upravitelné je pouze u vlastního poskytovatele.",
@@ -249,6 +253,7 @@
           "descriptionApple": "Zadejte volitelný číselný limit tokenů nebo ponechte výchozí předvolbu na zařízení.",
           "descriptionCustom": "Zadejte identifikátor modelu očekávaný vaším vlastním endpointem.",
           "descriptionDefault": "Vyberte model dostupný u vybraného poskytovatele.",
+          "descriptionClaudeCli": "Vyberte model Claude. Haiku je nejrychlejší a nejlevnější, Opus je nejschopnější.",
           "placeholderApple": "Apple Intelligence",
           "placeholderWithOptions": "Vyhledejte nebo vyberte model",
           "placeholderNoOptions": "Zadejte název modelu",

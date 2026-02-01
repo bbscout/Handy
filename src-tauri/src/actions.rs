@@ -4,7 +4,7 @@ use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, S
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::history::HistoryManager;
 use crate::managers::transcription::TranscriptionManager;
-use crate::settings::{get_settings, AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::settings::{get_settings, AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID, CLAUDE_CLI_PROVIDER_ID};
 use crate::shortcut;
 use crate::tray::{change_tray_icon, TrayIconState};
 use crate::utils::{self, show_recording_overlay, show_transcribing_overlay};
@@ -128,6 +128,35 @@ async fn maybe_post_process_transcription(
             debug!("Apple Intelligence provider selected on unsupported platform");
             return None;
         }
+    }
+
+    // Handle Claude Code CLI provider
+    if provider.id == CLAUDE_CLI_PROVIDER_ID {
+        if !crate::claude_cli::is_claude_cli_available() {
+            debug!("Claude CLI selected but not available on this system");
+            return None;
+        }
+
+        // model contains the selected Claude model (haiku/sonnet/opus)
+        return match crate::claude_cli::process_with_claude_cli(transcription, &processed_prompt, &model) {
+            Ok(result) => {
+                if result.trim().is_empty() {
+                    debug!("Claude CLI returned an empty response");
+                    None
+                } else {
+                    debug!(
+                        "Claude CLI post-processing succeeded with model '{}'. Output length: {} chars",
+                        model,
+                        result.len()
+                    );
+                    Some(result)
+                }
+            }
+            Err(err) => {
+                error!("Claude CLI post-processing failed: {}. Falling back to original text.", err);
+                None
+            }
+        };
     }
 
     let api_key = settings

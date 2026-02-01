@@ -65,6 +65,22 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
             {t("settings.postProcessing.api.appleIntelligence.unavailable")}
           </Alert>
         ) : null
+      ) : state.isClaudeCliProvider ? (
+        <>
+          {state.claudeCliUnavailable ? (
+            <Alert variant="error" contained>
+              {t("settings.postProcessing.api.claudeCli.unavailable", {
+                defaultValue: "Claude Code CLI is not installed or not available. Install it from https://claude.ai/claude-code and ensure 'claude' command is in your PATH.",
+              })}
+            </Alert>
+          ) : (
+            <Alert variant="info" contained>
+              {t("settings.postProcessing.api.claudeCli.info", {
+                defaultValue: "Claude Code CLI uses your local claude command. Requires Claude Code CLI with Pro/Max subscription. No API key needed.",
+              })}
+            </Alert>
+          )}
+        </>
       ) : (
         <>
           {state.selectedProvider?.id === "custom" && (
@@ -115,9 +131,13 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
         <SettingContainer
           title={t("settings.postProcessing.api.model.title")}
           description={
-            state.isCustomProvider
-              ? t("settings.postProcessing.api.model.descriptionCustom")
-              : t("settings.postProcessing.api.model.descriptionDefault")
+            state.isClaudeCliProvider
+              ? t("settings.postProcessing.api.model.descriptionClaudeCli", {
+                  defaultValue: "Select the Claude model to use. Haiku is fastest and cheapest, Opus is most capable.",
+                })
+              : state.isCustomProvider
+                ? t("settings.postProcessing.api.model.descriptionCustom")
+                : t("settings.postProcessing.api.model.descriptionDefault")
           }
           descriptionMode="tooltip"
           layout="stacked"
@@ -141,16 +161,18 @@ const PostProcessingSettingsApiComponent: React.FC = () => {
               onBlur={() => {}}
               className="flex-1 min-w-[380px]"
             />
-            <ResetButton
-              onClick={state.handleRefreshModels}
-              disabled={state.isFetchingModels}
-              ariaLabel={t("settings.postProcessing.api.model.refreshModels")}
-              className="flex h-10 w-10 items-center justify-center"
-            >
-              <RefreshCcw
-                className={`h-4 w-4 ${state.isFetchingModels ? "animate-spin" : ""}`}
-              />
-            </ResetButton>
+            {!state.isClaudeCliProvider && (
+              <ResetButton
+                onClick={state.handleRefreshModels}
+                disabled={state.isFetchingModels}
+                ariaLabel={t("settings.postProcessing.api.model.refreshModels")}
+                className="flex h-10 w-10 items-center justify-center"
+              >
+                <RefreshCcw
+                  className={`h-4 w-4 ${state.isFetchingModels ? "animate-spin" : ""}`}
+                />
+              </ResetButton>
+            )}
           </div>
         </SettingContainer>
       )}

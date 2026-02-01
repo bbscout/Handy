@@ -401,6 +401,20 @@ async checkAppleIntelligenceAvailable() : Promise<boolean> {
     return await TAURI_INVOKE("check_apple_intelligence_available");
 },
 /**
+ * Check if Claude Code CLI is available on this system.
+ * Called by the frontend when the user selects Claude CLI provider.
+ */
+async checkClaudeCliAvailable() : Promise<boolean> {
+    return await TAURI_INVOKE("check_claude_cli_available");
+},
+/**
+ * Get available Claude CLI models.
+ * Returns list of [id, label] tuples.
+ */
+async getClaudeCliModels() : Promise<[string, string][]> {
+    return await TAURI_INVOKE("get_claude_cli_models");
+},
+/**
  * Try to initialize Enigo (keyboard/mouse simulation).
  * On macOS, this will return an error if accessibility permissions are not granted.
  */

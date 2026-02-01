@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "../../../hooks/useSettings";
 import { commands, type PostProcessProvider } from "@/bindings";
 import type { ModelOption } from "./types";
@@ -11,7 +11,9 @@ type PostProcessProviderState = {
   selectedProvider: PostProcessProvider | undefined;
   isCustomProvider: boolean;
   isAppleProvider: boolean;
+  isClaudeCliProvider: boolean;
   appleIntelligenceUnavailable: boolean;
+  claudeCliUnavailable: boolean;
   baseUrl: string;
   handleBaseUrlChange: (value: string) => void;
   isBaseUrlUpdating: boolean;
@@ -30,6 +32,7 @@ type PostProcessProviderState = {
 };
 
 const APPLE_PROVIDER_ID = "apple_intelligence";
+const CLAUDE_CLI_PROVIDER_ID = "claude_cli";
 
 export const usePostProcessProviderState = (): PostProcessProviderState => {
   const {
@@ -60,8 +63,18 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   }, [providers, selectedProviderId]);
 
   const isAppleProvider = selectedProvider?.id === APPLE_PROVIDER_ID;
+  const isClaudeCliProvider = selectedProvider?.id === CLAUDE_CLI_PROVIDER_ID;
   const [appleIntelligenceUnavailable, setAppleIntelligenceUnavailable] =
     useState(false);
+  const [claudeCliUnavailable, setClaudeCliUnavailable] = useState(false);
+  const [claudeCliModels, setClaudeCliModels] = useState<[string, string][]>([]);
+
+  // Fetch Claude CLI models when provider is selected
+  useEffect(() => {
+    if (isClaudeCliProvider) {
+      commands.getClaudeCliModels().then(setClaudeCliModels);
+    }
+  }, [isClaudeCliProvider]);
 
   // Use settings directly as single source of truth
   const baseUrl = selectedProvider?.base_url ?? "";
@@ -77,8 +90,9 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
   const handleProviderSelect = useCallback(
     async (providerId: string) => {
-      // Clear error state on any selection attempt (allows dismissing the error)
+      // Clear error states on any selection attempt (allows dismissing the error)
       setAppleIntelligenceUnavailable(false);
+      setClaudeCliUnavailable(false);
 
       if (providerId === selectedProviderId) return;
 
@@ -89,6 +103,16 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
           setAppleIntelligenceUnavailable(true);
           // Don't return - still set the provider so dropdown shows the selection
           // The backend gracefully handles unavailable Apple Intelligence
+        }
+      }
+
+      // Check Claude CLI availability before selecting
+      if (providerId === CLAUDE_CLI_PROVIDER_ID) {
+        const available = await commands.checkClaudeCliAvailable();
+        if (!available) {
+          setClaudeCliUnavailable(true);
+          // Don't return - still set the provider so dropdown shows the selection
+          // The backend gracefully handles unavailable Claude CLI
         }
       }
 
@@ -145,13 +169,18 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   );
 
   const handleRefreshModels = useCallback(() => {
-    if (isAppleProvider) return;
+    if (isAppleProvider || isClaudeCliProvider) return;
     void fetchPostProcessModels(selectedProviderId);
-  }, [fetchPostProcessModels, isAppleProvider, selectedProviderId]);
+  }, [fetchPostProcessModels, isAppleProvider, isClaudeCliProvider, selectedProviderId]);
 
   const availableModelsRaw = postProcessModelOptions[selectedProviderId] || [];
 
   const modelOptions = useMemo<ModelOption[]>(() => {
+    // For Claude CLI, use the static model list
+    if (isClaudeCliProvider && claudeCliModels.length > 0) {
+      return claudeCliModels.map(([id, label]) => ({ value: id, label }));
+    }
+
     const seen = new Set<string>();
     const options: ModelOption[] = [];
 
@@ -171,7 +200,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     upsert(model);
 
     return options;
-  }, [availableModelsRaw, model]);
+  }, [availableModelsRaw, model, isClaudeCliProvider, claudeCliModels]);
 
   const isBaseUrlUpdating = isUpdating(
     `post_process_base_url:${selectedProviderId}`,
@@ -197,7 +226,9 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     selectedProvider,
     isCustomProvider,
     isAppleProvider,
+    isClaudeCliProvider,
     appleIntelligenceUnavailable,
+    claudeCliUnavailable,
     baseUrl,
     handleBaseUrlChange,
     isBaseUrlUpdating,
