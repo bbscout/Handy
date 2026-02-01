@@ -52,15 +52,22 @@ jobs:
       - name: Install frontend dependencies
         run: bun install
 
-      - name: Remove Windows signing config
+      - name: Remove signing and updater config
         shell: pwsh
         run: |
           $config = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          # Remove Windows signing
           if ($config.bundle.windows.PSObject.Properties['signCommand']) {
             $config.bundle.windows.PSObject.Properties.Remove('signCommand')
+            Write-Host "Removed signCommand"
+          }
+          # Disable updater artifacts (requires signing key)
+          if ($config.bundle.PSObject.Properties['createUpdaterArtifacts']) {
+            $config.bundle.createUpdaterArtifacts = $false
+            Write-Host "Disabled createUpdaterArtifacts"
           }
           $config | ConvertTo-Json -Depth 20 | Set-Content src-tauri/tauri.conf.json
-          Write-Host "Removed signCommand from tauri.conf.json"
+          Write-Host "Config updated for unsigned fork build"
 
       - name: Build Tauri app
         run: bun run tauri build
