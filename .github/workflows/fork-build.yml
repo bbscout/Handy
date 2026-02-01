@@ -35,8 +35,19 @@ jobs:
       - name: Install Vulkan SDK
         uses: humbletim/install-vulkan-sdk@v1.2
         with:
-          version: latest
+          version: 1.4.309.0
           cache: true
+
+      - name: Verify Vulkan SDK
+        shell: pwsh
+        run: |
+          Write-Host "VULKAN_SDK=$env:VULKAN_SDK"
+          if (-not $env:VULKAN_SDK) {
+            Write-Error "VULKAN_SDK is not set!"
+            exit 1
+          }
+          Get-ChildItem $env:VULKAN_SDK -ErrorAction Stop
+          Write-Host "Vulkan SDK verified successfully"
 
       - name: Install frontend dependencies
         run: bun install
