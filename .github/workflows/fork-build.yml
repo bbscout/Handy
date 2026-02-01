@@ -1,0 +1,60 @@
+name: "Fork Build (No Signing)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_windows:
+        description: 'Build for Windows'
+        type: boolean
+        default: true
+      build_linux:
+        description: 'Build for Linux'
+        type: boolean
+        default: false
+      build_macos:
+        description: 'Build for macOS'
+        type: boolean
+        default: false
+
+jobs:
+  build-windows:
+    if: ${{ github.event.inputs.build_windows == 'true' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build.yml
+    with:
+      platform: "windows-latest"
+      target: "x86_64-pc-windows-msvc"
+      build-args: ""
+      sign-binaries: false
+      asset-prefix: "handy-fork"
+      upload-artifacts: true
+      is-debug-build: false
+
+  build-linux:
+    if: ${{ github.event.inputs.build_linux == 'true' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build.yml
+    with:
+      platform: "ubuntu-22.04"
+      target: "x86_64-unknown-linux-gnu"
+      build-args: "--bundles deb"
+      sign-binaries: false
+      asset-prefix: "handy-fork"
+      upload-artifacts: true
+      is-debug-build: false
+
+  build-macos:
+    if: ${{ github.event.inputs.build_macos == 'true' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build.yml
+    with:
+      platform: "macos-latest"
+      target: "x86_64-apple-darwin"
+      build-args: "--target x86_64-apple-darwin"
+      sign-binaries: false
+      asset-prefix: "handy-fork"
+      upload-artifacts: true
+      is-debug-build: false
