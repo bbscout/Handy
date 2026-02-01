@@ -7,54 +7,61 @@ on:
         description: 'Build for Windows'
         type: boolean
         default: true
-      build_linux:
-        description: 'Build for Linux'
-        type: boolean
-        default: false
-      build_macos:
-        description: 'Build for macOS'
-        type: boolean
-        default: false
 
 jobs:
   build-windows:
     if: ${{ github.event.inputs.build_windows == 'true' }}
+    runs-on: windows-latest
     permissions:
       contents: write
-    uses: ./.github/workflows/build.yml
-    with:
-      platform: "windows-latest"
-      target: "x86_64-pc-windows-msvc"
-      build-args: ""
-      sign-binaries: false
-      asset-prefix: "handy-fork"
-      upload-artifacts: true
-      is-debug-build: false
 
-  build-linux:
-    if: ${{ github.event.inputs.build_linux == 'true' }}
-    permissions:
-      contents: write
-    uses: ./.github/workflows/build.yml
-    with:
-      platform: "ubuntu-22.04"
-      target: "x86_64-unknown-linux-gnu"
-      build-args: "--bundles deb"
-      sign-binaries: false
-      asset-prefix: "handy-fork"
-      upload-artifacts: true
-      is-debug-build: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-  build-macos:
-    if: ${{ github.event.inputs.build_macos == 'true' }}
-    permissions:
-      contents: write
-    uses: ./.github/workflows/build.yml
-    with:
-      platform: "macos-latest"
-      target: "x86_64-apple-darwin"
-      build-args: "--target x86_64-apple-darwin"
-      sign-binaries: false
-      asset-prefix: "handy-fork"
-      upload-artifacts: true
-      is-debug-build: false
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install Vulkan SDK
+        uses: humbletim/install-vulkan-sdk@v1.2
+        with:
+          version: latest
+          cache: true
+
+      - name: Install frontend dependencies
+        run: bun install
+
+      - name: Remove Windows signing config
+        shell: pwsh
+        run: |
+          $config = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          if ($config.bundle.windows.PSObject.Properties['signCommand']) {
+            $config.bundle.windows.PSObject.Properties.Remove('signCommand')
+          }
+          $config | ConvertTo-Json -Depth 20 | Set-Content src-tauri/tauri.conf.json
+          Write-Host "Removed signCommand from tauri.conf.json"
+
+      - name: Build Tauri app
+        run: bun run tauri build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ""
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: handy-fork-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
